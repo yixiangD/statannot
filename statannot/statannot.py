@@ -7,6 +7,7 @@ from matplotlib.font_manager import FontProperties
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from statsmodels.stats.multitest import multipletests
 from seaborn.utils import remove_na
 
 from .utils import raise_expected_got, assert_is_in
@@ -57,7 +58,7 @@ def stat_test(
     # Check arguments.
     assert_is_in(
         comparisons_correction,
-        ['bonferroni', None],
+        ['bonferroni', "fdr_bh", None],
         label='argument `comparisons_correction`',
     )
 
@@ -144,6 +145,14 @@ def stat_test(
     if comparisons_correction == 'bonferroni':
         result.pval = bonferroni(result.pval, num_comparisons)
         result.test_str = result.test_str + ' with Bonferroni correction'
+    elif comparisons_correction == "fdr_bh":
+        print("before", result.pval)
+        temp = multipletests(result.pval,
+                             alpha=0.05,
+                             method=comparisons_correction)
+        result.pval = temp[1][0]
+        print("after", result.pval)
+        result.test_str = result.test_str + ' with Bonferroni-Holm correction'
     elif comparisons_correction is None:
         pass
     else:
@@ -390,7 +399,7 @@ def add_stat_annotation(ax, plot='boxplot',
     )
     assert_is_in(
         comparisons_correction,
-        ['bonferroni', None],
+        ['bonferroni', "fdr_bh", None],
         label='argument `comparisons_correction`'
     )
 
